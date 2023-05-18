@@ -1,0 +1,14 @@
+env:
+  sources:
+    - kind: deviceFunctions
+      module: p45demo.panda
+    - kind: planFunctions
+      module: p45demo.panda_plans
+    - kind: planFunctions
+      module: blueapi.plans
+stomp:
+  host: localhost
+  port: 61613
+logging:
+  level: "INFO"
+
