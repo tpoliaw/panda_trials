@@ -18,6 +18,9 @@ def render(txt, font='clr6x6', width=200):
     lines = f.renderText(txt).splitlines()
     return [[0 if c == ' ' else 1 for c in line] for line in lines]
 
+def enable(state: bool, pnd: PandA = "pnda") -> MsgGenerator:
+    yield from bps.mov(pnd.seq1.enable, 'ONE' if state else 'ZERO')
+
 def configure_text(txt: str, pnd: PandA = "pnda", font: str ="clr6x6", start: int =600, step: int =8) -> MsgGenerator:
     text_frames = zip(*render(txt, font, width=start//step)[::-1])
     posn = start
