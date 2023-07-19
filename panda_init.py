@@ -4,7 +4,6 @@ from bluesky import RunEngine, Msg
 from bluesky.protocols import Flyable, Readable, PartialEvent, Descriptor
 from bluesky.run_engine import call_in_bluesky_event_loop
 from bluesky import plans as bp, plan_stubs as bps, preprocessors as bpp
-# from IPython import get_ipython
 
 from ophyd.v2.core import DeviceCollector, AsyncStatus, wait_for_value
 from ophyd_epics_devices.panda import PandA
@@ -12,7 +11,6 @@ from ophyd_epics_devices.areadetector import ADDriver, NDFileHDF, HDFStreamerDet
 
 from typing import Iterator, Dict
 
-# get_ipython().run_line_magic("autoawait", "call_in_bluesky_event_loop")
 
 
 class FlyingPanda(Flyable):
