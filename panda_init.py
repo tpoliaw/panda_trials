@@ -21,36 +21,41 @@ from ophyd_epics_devices.panda import PandA
 class FlyingPanda(Flyable):
     def __init__(self, panda):
         self.dev = panda
-        self._start_status = None
         self._frames = []
+
     @property
     def name(self) -> str:
-        return "panda"
+        return self.dev.name
+
     async def set_frames(self, frames):
         table = tables.build_table(*zip(*frames))
-        return self.dev.seq1.tables.set(table)
+        await self.dev.seq1.tables.set(table)
+
     @AsyncStatus.wrap
     async def kickoff(self) -> None:
-        await self.dev.seq1.enable.set('ONE')
+        await self.dev.seq1.enable.set("ONE")
+        await wait_for_value(self.dev.seq1.active, "1", 5)
+
     @AsyncStatus.wrap
     async def complete(self) -> None:
-        await wait_for_value(self.dev.seq1.active, "1", 20)
         await wait_for_value(self.dev.seq1.active, "0", 20)
-        await self.dev.seq1.enable.set('ZERO')
+        await self.dev.seq1.enable.set("ZERO")
+
     def collect(self) -> Iterator[PartialEvent]:
         yield from iter([])
+
     def describe_collect(self) -> Dict[str, Dict[str, Descriptor]]:
         return {}
 
+
 @bpp.run_decorator()
-def collect_n(det, panda, frames, tpf, expo):
+def collect_n(det: HDFStreamerDet, panda: FlyingPanda, frames: int, tpf: int, expo: float):
     yield from bps.mov(det.drv.acquire_time, expo, det.drv.num_images, frames)
 
-    row = tables.frame(time1=tpf-10, time2=10, outa2=1, repeats=frames)
+    row = tables.frame(time1=tpf - 10, time2=10, outa2=1, repeats=frames)
     yield from bps.mov(panda.dev.seq1.table, tables.build_table(*zip(*[row])))
 
-    result = yield Msg('stage', det)
-    yield from bps.wait(result)
+    yield Msg("stage", det)
 
     yield from bps.kickoff(det, wait=False, group="kick")
     yield from bps.kickoff(panda, wait=False, group="kick")
@@ -59,22 +64,19 @@ def collect_n(det, panda, frames, tpf, expo):
 
     det_stat = yield from bps.complete(det, wait=False, group="complete")
     panda_state = yield from bps.complete(panda, wait=False, group="complete")
-    # yield from bps.sleep(3)
 
     while det_stat and not det_stat.done:
         yield from bps.sleep(1)
         yield from bps.collect(det, stream=True, return_payload=False)
     yield from bps.wait(group="complete")
 
-    yield Msg('unstage', det)
-
-
+    yield Msg("unstage", det)
 
 
 RE = RunEngine()
 
 d11_dir = TmpDirectoryProvider()
-d11_dir._directory = Path('/dls/tmp/qan22331/panda_ad')
+d11_dir._directory = Path("/dls/tmp/qan22331/panda_ad")
 
 with DeviceCollector():
     pnd = PandA("BL38P-PANDA")
@@ -84,8 +86,4 @@ with DeviceCollector():
 
 fp = FlyingPanda(pnd)
 
-try:
-    RE(collect_n(d11, fp, 8, 1200, 0.2))
-except Exception as e:
-    print(e)
-    
+RE(collect_n(d11, fp, 8, 1200, 0.2))
