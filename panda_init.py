@@ -31,10 +31,8 @@ class FlyingPanda(Flyable):
         await self.dev.seq1.enable.set('ONE')
     @AsyncStatus.wrap
     async def complete(self) -> None:
-        print('complete panda')
         await wait_for_value(self.dev.seq1.active, "1", 20)
         await wait_for_value(self.dev.seq1.active, "0", 20)
-        print('Active is 0')
         await self.dev.seq1.enable.set('ZERO')
     def collect(self) -> Iterator[PartialEvent]:
         yield from iter([])
@@ -43,35 +41,27 @@ class FlyingPanda(Flyable):
 
 @bpp.run_decorator()
 def collect_n(det, panda, frames, tpf, expo):
-    print(f'Starting collect_n({det.name}, {panda.name}, {tpf}, {expo})')
     yield from bps.mov(det.drv.acquire_time, expo, det.drv.num_images, frames)
 
     row = tables.frame(time1=tpf-10, time2=10, outa2=1, repeats=frames)
     yield from bps.mov(panda.dev.seq1.table, tables.build_table(*zip(*[row])))
-    print('configured detector + panda')
 
     result = yield Msg('stage', det)
-    print(f'Result of stage: {result}')
     yield from bps.wait(result)
-    print(f'Result of stage: {result}')
 
     yield from bps.kickoff(det, wait=False, group="kick")
     yield from bps.kickoff(panda, wait=False, group="kick")
 
     yield from bps.wait(group="kick")
 
-    print('all kicked off')
-
     det_stat = yield from bps.complete(det, wait=False, group="complete")
     panda_state = yield from bps.complete(panda, wait=False, group="complete")
     # yield from bps.sleep(3)
 
     while det_stat and not det_stat.done:
-        print('Waiting for detector to complete')
         yield from bps.sleep(1)
         yield from bps.collect(det, stream=True, return_payload=False)
     yield from bps.wait(group="complete")
-    print('all complete')
 
     yield Msg('unstage', det)
 
@@ -89,11 +79,8 @@ with DeviceCollector():
     d11_hdf = NDFileHDF("BL38P-DI-DCAM-03:HDF5:")
     d11 = HDFStreamerDet(d11_drv, d11_hdf, d11_dir)
 
-print('Configured devices')
-
 fp = FlyingPanda(pnd)
 
-print('Running plan')
 try:
     RE(collect_n(d11, fp, 8, 1200, 0.2))
 except Exception as e:
