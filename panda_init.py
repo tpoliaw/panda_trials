@@ -1,16 +1,21 @@
 from pathlib import Path
+from typing import Dict, Iterator
+
 import tables
-from bluesky import RunEngine, Msg
-from bluesky.protocols import Flyable, Readable, PartialEvent, Descriptor
+from bluesky import plan_stubs as bps
+from bluesky import plans as bp
+from bluesky import preprocessors as bpp
+from bluesky import Msg, RunEngine
+from bluesky.protocols import Descriptor, Flyable, PartialEvent, Readable
 from bluesky.run_engine import call_in_bluesky_event_loop
-from bluesky import plans as bp, plan_stubs as bps, preprocessors as bpp
-
-from ophyd.v2.core import DeviceCollector, AsyncStatus, wait_for_value
+from ophyd.v2.core import AsyncStatus, DeviceCollector, wait_for_value
+from ophyd_epics_devices.areadetector import (
+    ADDriver,
+    HDFStreamerDet,
+    NDFileHDF,
+    TmpDirectoryProvider,
+)
 from ophyd_epics_devices.panda import PandA
-from ophyd_epics_devices.areadetector import ADDriver, NDFileHDF, HDFStreamerDet, TmpDirectoryProvider
-
-from typing import Iterator, Dict
-
 
 
 class FlyingPanda(Flyable):
