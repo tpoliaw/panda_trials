@@ -86,4 +86,20 @@ with DeviceCollector():
 
 fp = FlyingPanda(pnd)
 
-RE(collect_n(d11, fp, 8, 1200, 0.2))
+class DocHolder:
+    def __init__(self):
+        self.names = []
+        self.docs = []
+    def append(self, name, doc):
+        self.names.append(name)
+        self.docs.append(doc)
+
+dh = DocHolder()
+
+RE(collect_n(d11, fp, 8, 1200, 0.2), dh.append)
+
+
+from pprint import pprint
+
+pprint(dh.names)
+pprint(dh.docs)
