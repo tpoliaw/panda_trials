@@ -1,5 +1,5 @@
 from enum import IntEnum
-from ophyd.v2.core import Device, wait_for_value
+from ophyd.v2.core import Device, StandardReadable, wait_for_value
 from ophyd.v2.epics import epics_signal_r, epics_signal_rw
 
 
@@ -38,7 +38,7 @@ class TetrammGeometry(IntEnum):
     Square = 1
 
 
-class Tetramm(Device):
+class Tetramm(StandardReadable):
     base_sample_rate: int
     """base rate"""
 
@@ -54,14 +54,32 @@ class Tetramm(Device):
     idle_trigger_state: TetrammTrigger
     """The state the trigger should be left in when no collection is running"""
 
+    idle_averaging_time: float
+    """Time that readings should be averaged over then no collection is running"""
+
+    idle_values_per_reading: int
+    """The number of values that should be averaged to give each sample when no collection is running"""
+
+    collection_resolution: TetrammResolution = TetrammResolution.TwentyFourBits
+    """Default resolution to be used for collections"""
+
+    collection_geometry: TetrammGeometry = TetrammGeometry.Square
+    """Default geometry to be used for collections"""
+
+    collection_range: TetrammRange = TetrammRange.uA
+    """Default range to be used for collections"""
+
     def __init__(
         self,
+        name,
         base_pv,
         minimum_values_per_reading=5,
         maximum_readings_per_frame=1_000,
         base_sample_rate=100_000,
         idle_acquire=True,
         idle_trigger_state=TetrammTrigger.FreeRun,
+        idle_averaging_time=0.1,
+        idle_values_per_reading=10,
     ):
         self.range = epics_signal_rw(TetrammRange, base_pv + ":DRV:Range")
         self.sample_time = epics_signal_r(float, base_pv + ":DRV:SampleTime_RBV")
@@ -97,6 +115,15 @@ class Tetramm(Device):
 
         self.idle_acquire = idle_acquire
         self.idle_trigger_state = idle_trigger_state
+        self.idle_averaging_time = idle_averaging_time
+        self.idle_values_per_reading = idle_values_per_reading
+
+        self.set_readable_signals(
+            read=[],
+            config=[self.values_per_reading, self.averaging_time, self.sample_time],
+        )
+        super().__init__(name=name)
+
 
     async def set_frame_time(self, seconds):
         await self.averaging_time.set(seconds / 1_000)
@@ -116,3 +143,24 @@ class Tetramm(Device):
             target = await self.to_average.get_value()
             await wait_for_value(self.averaged, target, seconds * 2)
             self.acquire.set(False)
+
+    def stage(self):
+        # set averaging time
+        # set dimensions
+        # stop idle acquire
+        # set trigger to ext trig
+        # set collection time?
+        # set geometry
+        # set range
+        # set resolution
+        # set acquire?
+        # set recording?
+        pass
+
+    def unstage(self):
+        # stop acquiring
+        # set idle trigger state
+        # set idle averaging time
+        # set idle values per reading
+        # set acquire if needed
+        pass
