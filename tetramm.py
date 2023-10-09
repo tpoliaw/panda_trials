@@ -1,4 +1,5 @@
 from enum import IntEnum
+from time import time
 from ophyd.v2.core import Device, StandardReadable, wait_for_value
 from ophyd.v2.epics import epics_signal_r, epics_signal_rw
 
@@ -81,6 +82,7 @@ class Tetramm(StandardReadable):
         idle_averaging_time=0.1,
         idle_values_per_reading=10,
     ):
+        self._base_pv = base_pv
         self.range = epics_signal_rw(TetrammRange, base_pv + ":DRV:Range")
         self.sample_time = epics_signal_r(float, base_pv + ":DRV:SampleTime_RBV")
 
@@ -109,6 +111,14 @@ class Tetramm(StandardReadable):
 
         self.geometry = epics_signal_rw(TetrammGeometry, base_pv + ":DRV:Geometry")
 
+        self.current_1 = epics_signal_r(float, base_pv + ":Cur1:MeanValue_RBV")
+        self.current_2 = epics_signal_r(float, base_pv + ":Cur2:MeanValue_RBV")
+        self.current_3 = epics_signal_r(float, base_pv + ":Cur3:MeanValue_RBV")
+        self.current_4 = epics_signal_r(float, base_pv + ":Cur4:MeanValue_RBV")
+
+        self.position_x = epics_signal_r(float, base_pv + ":PosX:MeanValue_RBV")
+        self.position_y = epics_signal_r(float, base_pv + ":PosY:MeanValue_RBV")
+
         self.base_sample_rate = base_sample_rate
         self.maximum_readings_per_frame = maximum_readings_per_frame
         self.minimum_values_per_reading = minimum_values_per_reading
@@ -119,11 +129,61 @@ class Tetramm(StandardReadable):
         self.idle_values_per_reading = idle_values_per_reading
 
         self.set_readable_signals(
-            read=[],
+            read=[
+                self.current_1,
+                self.current_2,
+                self.current_3,
+                self.current_4,
+                self.position_x,
+                self.position_y,
+            ],
             config=[self.values_per_reading, self.averaging_time, self.sample_time],
         )
         super().__init__(name=name)
 
+    def describe(self):
+        return {
+            "current_1": {
+                "source": self.current_1.source,
+                "dtype": "number",
+                "shape": [],
+            },
+            "current_2": {
+                "source": self.current_1.source,
+                "dtype": "number",
+                "shape": [],
+            },
+            "current_3": {
+                "source": self.current_1.source,
+                "dtype": "number",
+                "shape": [],
+            },
+            "current_4": {
+                "source": self.current_1.source,
+                "dtype": "number",
+                "shape": [],
+            },
+            "position_x": {
+                "source": self.current_1.source,
+                "dtype": "number",
+                "shape": [],
+            },
+            "position_y": {
+                "source": self.current_1.source,
+                "dtype": "number",
+                "shape": [],
+            },
+        }
+
+    def read(self):
+        return {
+                'current_1': {'value': self.current_1.get_value(), 'timestamp': time()},
+                'current_2': {'value': self.current_2.get_value(), 'timestamp': time()},
+                'current_3': {'value': self.current_3.get_value(), 'timestamp': time()},
+                'current_4': {'value': self.current_4.get_value(), 'timestamp': time()},
+                'position_x': {'value': self.position_x.get_value(), 'timestamp': time()},
+                'position_y': {'value': self.position_y.get_value(), 'timestamp': time()},
+                }
 
     async def set_frame_time(self, seconds):
         await self.averaging_time.set(seconds / 1_000)
