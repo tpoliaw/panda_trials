@@ -1,30 +1,30 @@
-from enum import IntEnum
 from time import time
+from enum import Enum
 from ophyd.v2.core import Device, StandardReadable, wait_for_value
 from ophyd.v2.epics import epics_signal_r, epics_signal_rw
 
 
-class TetrammRange(IntEnum):
-    uA = 0
-    nA = 1
+class TetrammRange(Enum):
+    uA = "+- 120 uA"
+    nA = "+- 120 nA"
 
 
-class TetrammTrigger(IntEnum):
-    FreeRun = 0
-    ExtTrigger = 1
-    ExtBulb = 2
-    ExtGate = 3
+class TetrammTrigger(Enum):
+    FreeRun = "Free run"
+    ExtTrigger = "Ext. trig."
+    ExtBulb = "Ext. bulb"
+    ExtGate = "Ext. gate"
 
 
-class TetrammChannels(IntEnum):
-    One = 0
-    Two = 1
-    Four = 2
+class TetrammChannels(Enum):
+    One = "1"
+    Two = "2"
+    Four = "4"
 
 
-class TetrammResolution(IntEnum):
-    SixteenBits = 0
-    TwentyFourBits = 1
+class TetrammResolution(Enum):
+    SixteenBits = "16 bits"
+    TwentyFourBits = "24 bits"
 
     def __repr__(self):
         match self:
@@ -34,9 +34,9 @@ class TetrammResolution(IntEnum):
                 return "24bits"
 
 
-class TetrammGeometry(IntEnum):
-    Diamond = 0
-    Square = 1
+class TetrammGeometry(Enum):
+    Diamond = "Diamond"
+    Square = "Square"
 
 
 class Tetramm(StandardReadable):
